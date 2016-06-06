@@ -12,6 +12,8 @@ def filter_tweets_from_csv(path):
     return None
 
 def preprocess_tweet(tweet):
+    #TODO
+    # This function looks non longer useful. Remove it.
     # Tokenization
     tknzr = TweetTokenizer()
     tokens = tknzr.tokenize(tweet)
@@ -24,3 +26,15 @@ def preprocess_tweet(tweet):
     stemmer = SnowballStemmer('english')
     stemmer = [stemmer.stem(token) for token in tokens]
     return tokens
+
+def tokenizer(tweet):
+    # Tokenization
+    tknzr = TweetTokenizer()
+    tokens = tknzr.tokenize(tweet)
+    tokens = [token for token in tokens if token not in
+        "!@#$%*()_+{}:>?«»\"\'.,-"]
+    # Stemming
+    stemmer = SnowballStemmer('english')
+    stemmer = [stemmer.stem(token) for token in tokens]
+    return tokens
+
