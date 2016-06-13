@@ -12,7 +12,7 @@ def filter_tweets_from_csv(path):
     """
     Returns a list of [positive or negative, text of the tweet]
     """
-    with open(path, 'rt') as f:
+    with open(path, 'rt', errors='ignore') as f:
         reader = csv.reader(f)
         data = list(reader)
         return [[int(row[0]), row[-1]] for row in data]
@@ -39,11 +39,13 @@ def generate_tdidf_matrix(data):
     """
     Returns a tuple (tdif_matrix, list of classes)
     """
+    from IPython import embed
     documents = [i[1] for i in data]
     classes = numpy.array([int(i[0]) if int(i[0]) == 0 else 1 for i in data])
 
     vectorizer = TfidfVectorizer(tokenizer=tokenizer, stop_words='english')
     matrix = vectorizer.fit_transform(documents)
+    embed()
 
     return matrix.toarray(), classes
 
@@ -84,7 +86,3 @@ def separateDataSet(matrix,classes, ratio):
                 yTest[k] = classes[i]
                 k += 1
     return x, y, xTest, yTest
-
-
-def generic_predict(classifier, x, y, xTest, yTest):
-    return classifier.predict(xTest)
