@@ -14,4 +14,18 @@ matrix, classes = generate_tdidf_matrix(data)
 # print(matrix.shape)
 
 x, y, xTest, yTest = separateDataSet(matrix, classes, 0.8)
-text_report(x, y, xTest, yTest)
+classifiers = text_report(x, y, xTest, yTest)
+
+"""
+while True:
+    tweet = input()
+    #tokenizar
+    tokens = tokenizer(tweet)
+    print(tokens)
+    for classifier in classifiers:
+        pred = classifier.predict(x)
+        if pred == 1:
+            print("Positive")
+        else:
+            print("Negatvie")
+"""

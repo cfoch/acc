@@ -1,11 +1,13 @@
 import csv
 import numpy
 import enchant
+from IPython import embed
 from nltk.tokenize import TweetTokenizer
 from nltk.corpus import stopwords
 from nltk.stem import SnowballStemmer
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.neighbors import NearestNeighbors
+from settings import ALLOWED_WORDS_PATH
 
 
 def filter_tweets_from_csv(path):
@@ -17,36 +19,55 @@ def filter_tweets_from_csv(path):
         data = list(reader)
         return [[int(row[0]), row[-1]] for row in data]
 
-def tokenizer(tweet, check_words=False):
+def tokenizer(tweet):
     # Tokenization
     tknzr = TweetTokenizer()
     tokens = tknzr.tokenize(tweet)
     tokens = [token for token in tokens if token not in
         "!@#$%*()_+{}:>?«»\"\'.,-"]
+
+    # Join tokens starting with negation.
+    negation_words = ["not", "can't", "isn't", "shouldn't",
+        "doesn't", "don't"]
+    dummy = []
+    just_joined_words = False
+    for i in range(len(tokens)):
+        if just_joined_words:
+            just_joined_words = False
+            continue
+        if tokens[i] in negation_words and i + 1 < len(tokens):
+            token = tokens[i] + " " + tokens[i + 1]
+            just_joined_words = True
+        else:
+            token = tokens[i]
+        dummy.append(token)
+    tokens = dummy
+
     # Check if words are correct
-    if check_words:
-        # FIXME
-        # This code not only removes words that does not exist on an English
-        # dictionary, it also removes emoticons.
-        d = enchant.Dict("en_US")
-        tokes = [word for word in tokens if d.check(word)]
+    d = enchant.DictWithPWL("en_US", ALLOWED_WORDS_PATH)
+    # tokens = [word for word in tokens if d.check(word)]
+    dummy = []
+    for token in tokens:
+        if ((len(token.split(" ")) == 1 and d.check(token)) or
+            len(token.split(" ")) > 1):
+            dummy.append(token)
+    tokens = dummy
     # Stemming
     stemmer = SnowballStemmer('english')
-    stemmer = [stemmer.stem(token) for token in tokens]
+    tokens = [stemmer.stem(token) for token in tokens]
+
     return tokens
 
 def generate_tdidf_matrix(data):
     """
     Returns a tuple (tdif_matrix, list of classes)
     """
-    from IPython import embed
     documents = [i[1] for i in data]
     classes = numpy.array([int(i[0]) if int(i[0]) == 0 else 1 for i in data])
 
     vectorizer = TfidfVectorizer(tokenizer=tokenizer, stop_words='english')
     matrix = vectorizer.fit_transform(documents)
     embed()
-
     return matrix.toarray(), classes
 
 def separateDataSet(matrix,classes, ratio):
