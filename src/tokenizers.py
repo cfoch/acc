@@ -2,36 +2,36 @@ import enchant
 from nltk import ne_chunk, pos_tag, word_tokenize
 from nltk.tokenize import TweetTokenizer
 from nltk.stem import SnowballStemmer
-from settings import ALLOWED_WORDS_PATH
+
 from utils import ne_tree_to_list
+from data import get_negative_contractions
 
 
 class ACCTweetTokenizer(TweetTokenizer):
     DEFAULT_SYMBOLS = "!@#$%*()_+{}:>?«»\"\'.,-"
-    DEFAULT_NEGATION_WORDS = ["not", "can't", "isn't", "shouldn't", "doesn't",
-                              "don't"]
+    DEFAULT_NEGATION_WORDS = ["not"]
 
     def __init__(self, collocations=True, remove_symbols=True,
                  check_word_correctness=True, stemming=True,
-                 join_negation_words=True, symbols_list=None,
-                 negation_words_list=None):
+                 join_negative_contractions=True, symbols_list=None,
+                 negative_contractions_list=None):
 
         TweetTokenizer.__init__(self)
         self.collocations = collocations
         self.remove_symbols = remove_symbols
         self.check_word_correctness = check_word_correctness
         self.stemming = stemming
-        self.join_negation_words = join_negation_words
+        self.join_negative_contractions = join_negative_contractions
 
         if symbols_list is None:
             self.symbols_list = self.DEFAULT_SYMBOLS
         else:
             self.symbols_list = symbols_list
 
-        if negation_words_list is None:
-            self.negation_words_list = self.DEFAULT_NEGATION_WORDS
+        if negative_contractions_list is None:
+            self.negative_contractions_list = self.DEFAULT_NEGATION_WORDS
         else:
-            self.negation_words_list = negation_words_list
+            self.negative_contractions_list = negative_contractions_list
 
     def tokenize(self, text):
         tokens = super(ACCTweetTokenizer, self).tokenize(text)
@@ -43,15 +43,19 @@ class ACCTweetTokenizer(TweetTokenizer):
                       if token not in self.symbols_list]
         if self.check_word_correctness:
             tokens = self._filter_dictionary(tokens)
-        if self.join_negation_words:
-            tokens = self._join_negation_words(tokens)
+        if self.join_negative_contractions:
+            tokens = self._join_negative_contractions(tokens)
         if self.stemming:
             stemmer = SnowballStemmer('english')
             tokens = [stemmer.stem(token) for token in tokens]
         return tokens
 
     def _filter_dictionary(self, tokens):
-        d = enchant.DictWithPWL("en_US", ALLOWED_WORDS_PATH)
+        try:
+            from settings import ALLOWED_WORDS_PATH
+            d = enchant.DictWithPWL("en_US", ALLOWED_WORDS_PATH)
+        except:
+            d = enchant.Dict("en_US")
         dummy = []
         for token in tokens:
             if ((len(token.split(" ")) == 1 and d.check(token)) or
@@ -59,14 +63,15 @@ class ACCTweetTokenizer(TweetTokenizer):
                 dummy.append(token)
         return dummy
 
-    def _join_negation_words(self, tokens):
+    def _join_negative_contractions(self, tokens):
         dummy = []
         just_joined_words = False
         for i in range(len(tokens)):
             if just_joined_words:
                 just_joined_words = False
                 continue
-            if tokens[i] in self.negation_words_list and i + 1 < len(tokens):
+            if (tokens[i] in get_negative_contractions() and
+                    i + 1 < len(tokens)):
                 token = tokens[i] + " " + tokens[i + 1]
                 just_joined_words = True
             else:

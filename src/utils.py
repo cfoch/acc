@@ -8,7 +8,6 @@ from nltk.stem import SnowballStemmer
 from nltk.tree import Tree
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.neighbors import NearestNeighbors
-from settings import ALLOWED_WORDS_PATH
 
 
 def ne_tree_to_list(tree):
@@ -20,7 +19,6 @@ def ne_tree_to_list(tree):
             l.append(child[0])
     return l
 
-
 def filter_tweets_from_csv(path):
     """
     Returns a list of [positive or negative, text of the tweet]
@@ -28,20 +26,18 @@ def filter_tweets_from_csv(path):
     with open(path, 'rt', errors='ignore') as f:
         reader = csv.reader(f)
         data = list(reader)
-        return [[int(row[0]), row[-1]] for row in data]
+        documents = [row[-1] for row in data]
+        classes = [int(row[0]) / 4 for row in data]
+        return documents, classes
 
 
-def generate_tdidf_matrix(data, tokenizer):
+def generate_tdidf_matrix(documents, tokenizer):
     """
     Returns a tuple (tdif_matrix, list of classes)
     """
-    documents = [i[1] for i in data]
-    classes = numpy.array([int(i[0]) if int(i[0]) == 0 else 1 for i in data])
-
     vectorizer = TfidfVectorizer(tokenizer=tokenizer, stop_words='english')
     matrix = vectorizer.fit_transform(documents)
-    embed()
-    return matrix.toarray(), classes
+    return matrix.toarray()
 
 
 def separateDataSet(matrix, classes, ratio):
