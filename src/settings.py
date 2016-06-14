@@ -32,5 +32,6 @@ CLASSIFIERS_SETTINGS = [
 ]
 
 DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data/')
-RESULTS_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../results/')
+RESULTS_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+    '../results/')
 ALLOWED_WORDS_PATH = os.path.join(DATA_DIR, 'allowed_words.txt')
