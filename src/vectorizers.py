@@ -12,16 +12,18 @@ def idf_deformer(vocabulary, factor):
 
     for i, token in enumerate(vocabulary):
         words = token.split(" ")
-        if len(set(words).intersection(set(positive_words))) > 0:
+        if (len(set(words).intersection(set(positive_words))) > 0 or
+              len(set(words).intersection(set(negative_words))) > 0):
             deformer[i] += factor
-        elif len(set(words).intersection(set(negative_words))) > 0:
-            deformer[i] -= factor
     return deformer
     
 
 class ACCTransformer(TfidfTransformer):
     def __init__(self, *args, **kwargs):
         TfidfTransformer.__init__(self, *args, **kwargs)
+        self.df = None
+        self._non_deformed_idf = None
+        self.idf_deformer = None
 
     def fit(self, X, y=None, idf_deformer=None):
         """Learn the idf vector (global term weights)
@@ -30,25 +32,45 @@ class ACCTransformer(TfidfTransformer):
         ----------
         X : sparse matrix, [n_samples, n_features]
             a matrix of term/token counts
+        idf_deformer: array [n_features]
+            an array containing the ratios to multiply the idf
         """
         if not sp.issparse(X):
             X = sp.csc_matrix(X)
         if self.use_idf:
             n_samples, n_features = X.shape
-            df = _document_frequency(X)
+            self.df = _document_frequency(X)
 
             # perform idf smoothing if required
-            df += int(self.smooth_idf)
+            self.df += int(self.smooth_idf)
             n_samples += int(self.smooth_idf)
 
             # log+1 instead of log makes sure terms with zero idf don't get
             # suppressed entirely.
-            idf = numpy.log(float(n_samples) / df) + 1.0
+            self._non_deformed_idf =\
+                numpy.log(float(n_samples) / self.df) + 1.0
             if idf_deformer is not None:
-                idf *= idf_deformer
+                idf = numpy.copy(self._non_deformed_idf) * idf_deformer
             self._idf_diag = sp.spdiags(idf,
                                         diags=0, m=n_features, n=n_features)
         return self
+
+    @property
+    def idf_(self):
+        """
+        Return the idf considering the effect of a deformer.
+        """
+        if hasattr(self, "_idf_diag"):
+            return numpy.ravel(self._idf_diag.sum(axis=0))
+        else:
+            return None
+
+    @property
+    def non_deformed_idf_(self):
+        """
+        Return the idf without the effect of the deformer.
+        """
+        return self._non_deformed_idf
 
 
 class ACCVectorizer(TfidfVectorizer):
@@ -61,6 +83,7 @@ class ACCVectorizer(TfidfVectorizer):
 
     def fit_transform(self, raw_documents, y=None):
         X = super(TfidfVectorizer, self).fit_transform(raw_documents)
+        embed()
         vocabulary = self.get_feature_names()
         deformer = idf_deformer(vocabulary, self.deform_factor)
         self._tfidf.fit(X, idf_deformer=deformer)
