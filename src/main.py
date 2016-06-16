@@ -64,5 +64,6 @@ for indTrain, indTest in st:
     classifiers = text_report(x.toarray(), y, x_test.toarray(), y_test)
 """
 
-reporter = ACCReport(documents, classes, tokenizer.tokenize, text_report=True)
+reporter = ACCReport(documents, classes, tokenizer.tokenize, text_report=False,
+                     words_cloud=True, bar_chart=False)
 reporter.run()
