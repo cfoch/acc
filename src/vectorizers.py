@@ -7,12 +7,11 @@ from data import get_negative_words, get_positive_words
 
 
 class ACCTransformer(TfidfTransformer):
-    def __init__(self, idf=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         TfidfTransformer.__init__(self, *args, **kwargs)
         self.df = None
         self._non_deformed_idf = None
         self.idf_deformer = None
-        self.__idf = idf
 
     def fit(self, X, y=None, idf_deformer=None):
         """Learn the idf vector (global term weights)
@@ -36,16 +35,12 @@ class ACCTransformer(TfidfTransformer):
 
             # log+1 instead of log makes sure terms with zero idf don't get
             # suppressed entirely.
-            if self.__idf is None:
-                self._non_deformed_idf =\
-                    numpy.log(float(n_samples) / self.df) + 1.0
-                if idf_deformer is not None:
-                    idf = numpy.copy(self._non_deformed_idf) * idf_deformer
-                self._idf_diag = sp.spdiags(idf,
-                                            diags=0, m=n_features, n=n_features)
-            else:
-                self._idf_diag = sp.spdiags(self.__idf,
-                                            diags=0, m=n_features, n=n_features)
+            self._non_deformed_idf =\
+                numpy.log(float(n_samples) / self.df) + 1.0
+            if idf_deformer is not None:
+                idf = numpy.copy(self._non_deformed_idf) * idf_deformer
+            self._idf_diag = sp.spdiags(idf,
+                                        diags=0, m=n_features, n=n_features)
         return self
 
     @property
@@ -67,12 +62,11 @@ class ACCTransformer(TfidfTransformer):
 
 
 class ACCVectorizer(TfidfVectorizer):
-    def __init__(self, deform_factor=0.75, idf=None, *args, **kwargs):
+    def __init__(self, deform_factor=0.75, *args, **kwargs):
         TfidfVectorizer.__init__(self, *args, **kwargs)
         self._tfidf = ACCTransformer(norm=self.norm, use_idf=self.use_idf,
                                        smooth_idf=self.smooth_idf,
-                                       sublinear_tf=self.sublinear_tf,
-                                       idf=idf)
+                                       sublinear_tf=self.sublinear_tf)
         self.deform_factor = deform_factor
 
     def fit_transform(self, raw_documents, y=None):

@@ -132,5 +132,3 @@ class ACCReport:
         f.write("accuracy: %lf\n" % accuracy)
         f.write("confusion_matrix:\n")
         f.write("%s\n" % numpy.array_str(confusion_matrix, precision=4))
-        # TODOs
-        # Write confusion_matrix.
