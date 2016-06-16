@@ -28,7 +28,7 @@ def filter_tweets_from_csv(path):
         data = list(reader)
         documents = [row[-1] for row in data]
         classes = [int(row[0]) / 4 for row in data]
-        return documents, classes
+        return numpy.array(documents), numpy.array(classes)
 
 
 def generate_tdidf_matrix(documents, tokenizer):

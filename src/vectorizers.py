@@ -6,24 +6,13 @@ from sklearn.feature_extraction.text import TfidfVectorizer, TfidfTransformer,\
 from data import get_negative_words, get_positive_words
 
 
-def idf_deformer(vocabulary, factor):
-    deformer = numpy.full(len(vocabulary), fill_value=1)
-    positive_words, negative_words = get_positive_words(), get_negative_words()
-
-    for i, token in enumerate(vocabulary):
-        words = token.split(" ")
-        if (len(set(words).intersection(set(positive_words))) > 0 or
-              len(set(words).intersection(set(negative_words))) > 0):
-            deformer[i] += factor
-    return deformer
-    
-
 class ACCTransformer(TfidfTransformer):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, idf=None, *args, **kwargs):
         TfidfTransformer.__init__(self, *args, **kwargs)
         self.df = None
         self._non_deformed_idf = None
         self.idf_deformer = None
+        self.__idf = idf
 
     def fit(self, X, y=None, idf_deformer=None):
         """Learn the idf vector (global term weights)
@@ -47,12 +36,16 @@ class ACCTransformer(TfidfTransformer):
 
             # log+1 instead of log makes sure terms with zero idf don't get
             # suppressed entirely.
-            self._non_deformed_idf =\
-                numpy.log(float(n_samples) / self.df) + 1.0
-            if idf_deformer is not None:
-                idf = numpy.copy(self._non_deformed_idf) * idf_deformer
-            self._idf_diag = sp.spdiags(idf,
-                                        diags=0, m=n_features, n=n_features)
+            if self.__idf is None:
+                self._non_deformed_idf =\
+                    numpy.log(float(n_samples) / self.df) + 1.0
+                if idf_deformer is not None:
+                    idf = numpy.copy(self._non_deformed_idf) * idf_deformer
+                self._idf_diag = sp.spdiags(idf,
+                                            diags=0, m=n_features, n=n_features)
+            else:
+                self._idf_diag = sp.spdiags(self.__idf,
+                                            diags=0, m=n_features, n=n_features)
         return self
 
     @property
@@ -74,17 +67,33 @@ class ACCTransformer(TfidfTransformer):
 
 
 class ACCVectorizer(TfidfVectorizer):
-    def __init__(self, deform_factor=0.75, *args, **kwargs):
+    def __init__(self, deform_factor=0.75, idf=None, *args, **kwargs):
         TfidfVectorizer.__init__(self, *args, **kwargs)
         self._tfidf = ACCTransformer(norm=self.norm, use_idf=self.use_idf,
                                        smooth_idf=self.smooth_idf,
-                                       sublinear_tf=self.sublinear_tf)
+                                       sublinear_tf=self.sublinear_tf,
+                                       idf=idf)
         self.deform_factor = deform_factor
 
     def fit_transform(self, raw_documents, y=None):
         X = super(TfidfVectorizer, self).fit_transform(raw_documents)
-        embed()
         vocabulary = self.get_feature_names()
-        deformer = idf_deformer(vocabulary, self.deform_factor)
+        deformer = self.idf_deformer(vocabulary, self.deform_factor)
         self._tfidf.fit(X, idf_deformer=deformer)
         return self._tfidf.transform(X, copy=False)
+
+    def idf_deformer(self, vocabulary, factor):
+        deformer = numpy.full(len(vocabulary), fill_value=1)
+        positive_words, negative_words =\
+            get_positive_words(), get_negative_words()
+        positive_words = set([self.tokenizer(t)[0] for t in positive_words
+                              if self.tokenizer(t)])
+        negative_words = set([self.tokenizer(t)[0] for t in negative_words
+                              if self.tokenizer(t)])
+
+        for i, token in enumerate(vocabulary):
+            words = token.split(" ")
+            if (len(set(words).intersection(positive_words)) > 0 or
+                  len(set(words).intersection(negative_words)) > 0):
+                deformer[i] += factor
+        return deformer
