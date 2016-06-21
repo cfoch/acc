@@ -71,7 +71,7 @@ class ACCReport:
             os.makedirs(RESULTS_DIR)
 
         self.REPORTS_PATH = os.path.join(RESULTS_DIR,
-            time.strftime("%Y%m%d-%H%M%S"))
+            time.strftime("%b-%d-%I%M%p-%G"))
         os.makedirs(self.REPORTS_PATH)
 
     def run(self):
@@ -79,6 +79,12 @@ class ACCReport:
             return
 
         st = StratifiedKFold(self.classes, n_folds=4)
+
+
+        with open(os.path.join(self.REPORTS_PATH, "tokenizer_params.txt"),
+                "w") as f:
+            f.write(str(self.tokenizer.__dict__))
+
 
         if self.words_cloud:
             # Not available yet.
@@ -97,7 +103,7 @@ class ACCReport:
             sentiments_test = self.classes[indTest]
 
             acc_vectorizer = ACCVectorizer(
-                tokenizer=self.tokenizer, stop_words='english')
+                tokenizer=self.tokenizer.tokenize, stop_words='english')
             x = acc_vectorizer.fit_transform(tweets)
             y = sentiments
 
@@ -116,12 +122,13 @@ class ACCReport:
                     self.generate_report(current_report_path,
                         classifier_settings, x.toarray(), y, x_test.toarray(),
                         y_test)
+                    
             i += 1
 
     def generate_report(self, base_path, classifier_settings,
                         x, y, xTest, yTest):
         print("Generating %s report." % classifier_settings["name"])
-        path = os.path.join(base_path, classifier_settings["name"])
+        path = os.path.join(base_path, classifier_settings["dir"])
         os.makedirs(path)
 
         classifier = classifier_from_settings(classifier_settings)
@@ -131,10 +138,13 @@ class ACCReport:
         precision, recall, fscore, support =\
             precision_recall_fscore_support(yTest, yPred, average='binary')
         accuracy = accuracy_score(yTest, yPred)
-
+        
+        
         if self.text_report:
             text_report_path = os.path.join(path, self.TEXT_REPORT_DIR)
             os.makedirs(text_report_path)
+            with open(os.path.join(text_report_path, "params.txt"), "w") as f:
+                f.write( str(classifier.get_params()))
             with open(os.path.join(text_report_path, "report.txt"), "w") as f:
                 self._simple_text_report(f, classifier_settings, precision,
                     recall, fscore, accuracy, cm)
@@ -165,9 +175,9 @@ class ACCReport:
             if c == 1]
         negative_documents = [d for (c, d) in zip(self.classes, self.documents)
             if c == 0]
-        positive_vectorizer = CountVectorizer(tokenizer=self.tokenizer,
+        positive_vectorizer = CountVectorizer(tokenizer=self.tokenizer.tokenize,
             stop_words='english')
-        negative_vectorizer = CountVectorizer(tokenizer=self.tokenizer,
+        negative_vectorizer = CountVectorizer(tokenizer=self.tokenizer.tokenize,
             stop_words='english')
 
         m_positive = positive_vectorizer.fit_transform(positive_documents)
