@@ -13,7 +13,7 @@ from vectorizers import ACCVectorizer
 from IPython import embed
 
 
-path = os.path.join(DATA_DIR, "training.1000.csv")
+path = os.path.join(DATA_DIR, "training.10000.csv")
 documents, classes = filter_tweets_from_csv(path)
 
 tokenizer = ACCTweetTokenizer()
@@ -64,6 +64,6 @@ for indTrain, indTest in st:
     classifiers = text_report(x.toarray(), y, x_test.toarray(), y_test)
 """
 
-reporter = ACCReport(documents, classes, tokenizer.tokenize, text_report=False,
-                     words_cloud=True, bar_chart=False)
+reporter = ACCReport(documents, classes, tokenizer, text_report=True,
+                     words_cloud=True, bar_chart=True)
 reporter.run()

@@ -28,6 +28,12 @@ CLASSIFIERS_SETTINGS = [
         "name": "Support Vector Machine SVC",
         "dir": "svc",
         "args": {}
+    },
+    {
+        "classifier": SVC,
+        "name": "Support Vector Machine SVC",
+        "dir": "svc_linear",
+        "args": {"kernel" : "linear"}
     }
 ]
 
@@ -36,8 +42,8 @@ DATA_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)), '../data/')
 RESULTS_DIR = os.path.join(os.path.abspath(os.path.dirname(__file__)),
     '../results/')
 ALLOWED_WORDS_PATH = os.path.join(DATA_DIR, 'allowed_words.txt')
-NEGATIVE_WORDS_PATH = os.path.join(DATA_DIR, 'negative_words.txt')
-POSITIVE_WORDS_PATH = os.path.join(DATA_DIR, 'positive_words.txt')
+NEGATIVE_WORDS_PATH = os.path.join(DATA_DIR, 'negative_words_tokenized.txt')
+POSITIVE_WORDS_PATH = os.path.join(DATA_DIR, 'positive_words_tokenized.txt')
 NEGATIVE_CONTRACTIONS_WORDS_PATH = os.path.join(DATA_DIR,
     'negative_contractions.txt')
 
