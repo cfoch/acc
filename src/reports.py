@@ -106,7 +106,7 @@ class ACCReport:
                 tokenizer=self.tokenizer.tokenize, stop_words='english')
             x = acc_vectorizer.fit_transform(tweets)
             y = sentiments
-
+            print("Feature names: %d" % len(acc_vectorizer.get_feature_names()))
             x_test = acc_vectorizer.transform(tweets_test)
             y_test = sentiments_test
 
