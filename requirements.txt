@@ -12,7 +12,7 @@ git-pep8-commit-hook==0.1.0
 git-pylint-commit-hook==2.1.0
 gitdb==0.6.4
 GitPython==1.0.2
-ipython==4.2.0
+ipython==7.16.3
 ipython-genutils==0.1.0
 jedi==0.9.0
 lazy-object-proxy==1.2.1
